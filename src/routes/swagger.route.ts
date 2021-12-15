@@ -1,4 +1,4 @@
-import {Router} from 'express';
+import { Router } from 'express';
 import SwaggerController from '../controllers/swagger.controller';
 
 class SwaggerRoute {
@@ -16,6 +16,7 @@ class SwaggerRoute {
         this.router.get('/reqover/specs', this.swaggerController.specs);
         this.router.get('/reset', this.swaggerController.reset);
         this.router.post('/reqover/config', this.swaggerController.saveConfig);
+        this.router.post('/reqover/config/:id', this.swaggerController.saveConfig_new);
         // this.router.get('/', this.swaggerController.config);
         this.router.use('/reqover/swagger', this.swaggerController.swaggerApi);
         this.router.get('/reqover/api/report/raw', this.swaggerController.downloadReport);

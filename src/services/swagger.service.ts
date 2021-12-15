@@ -1,13 +1,14 @@
 import swaggerParser from '@apidevtools/swagger-parser';
-import {SWAGGER_BASE_PATH, API_SERVICE_URL, SWAGGER_SPEC_URL} from '../config/constants';
+import { SWAGGER_BASE_PATH, API_SERVICE_URL, SWAGGER_SPEC_URL, CURRENT_ID } from '../config/constants';
+import { SWAGGER_BASE_PATH_ARRAY, API_SERVICE_URL_ARRAY, SWAGGER_SPEC_URL_ARRAY } from '../config/constants';
 import UrlPattern from 'url-pattern';
 import merge from 'deepmerge';
-import {spec} from '../controllers/swagger.controller';
+import { spec } from '../controllers/swagger.controller';
 import _ from 'lodash';
 
 export async function getSwaggerPaths(swaggerSpec: any) {
     const swaggerInfo: any = await swaggerParser.parse(swaggerSpec);
-    const {basePath, paths} = swaggerInfo;
+    const { basePath, paths } = swaggerInfo;
     const apiPaths = Object.entries(paths);
     const tags = swaggerInfo.tags?.map((t) => t.name) || ['default'];
     const baseApiPath = basePath || SWAGGER_BASE_PATH;
@@ -23,7 +24,7 @@ export async function getSwaggerPaths(swaggerSpec: any) {
         }
 
         const methods = Object.entries(value).map(([methodName, data]) => {
-            const {responses, parameters} = data;
+            const { responses, parameters } = data;
             const tags = data.tags || ['default'];
             return {
                 path: path,
@@ -34,10 +35,45 @@ export async function getSwaggerPaths(swaggerSpec: any) {
             };
         });
 
-        return {path: path, methods};
+        return { path: path, methods };
     });
 
-    return {basePath: baseApiPath, tags: tags, apiList: apiList};
+    return { basePath: baseApiPath, tags: tags, apiList: apiList };
+}
+
+export async function getSwaggerPaths_new(swaggerSpec: any) {
+    const swaggerInfo: any = await swaggerParser.parse(swaggerSpec);
+    const { basePath, paths } = swaggerInfo;
+    const apiPaths = Object.entries(paths);
+    const tags = swaggerInfo.tags?.map((t) => t.name) || ['default'];
+    const baseApiPath = basePath || SWAGGER_BASE_PATH;
+
+    const apiList = apiPaths.map(([apiPath, value]) => {
+        let path = `${apiPath}`;
+        if (basePath == '/') {
+            path = apiPath;
+        } else if (!basePath) {
+            path = `${SWAGGER_BASE_PATH}${apiPath}`;
+        } else {
+            path = `${basePath}${apiPath}`;
+        }
+
+        const methods = Object.entries(value).map(([methodName, data]) => {
+            const { responses, parameters } = data;
+            const tags = data.tags || ['default'];
+            return {
+                path: path,
+                tags: tags,
+                name: methodName.toUpperCase(),
+                responses: Object.keys(responses),
+                parameters: parameters ? parameters : [],
+            };
+        });
+
+        return { path: path, methods };
+    });
+
+    return { basePath: baseApiPath, tags: tags, apiList: apiList };
 }
 
 export async function getCoverageReport(apiData) {
@@ -47,7 +83,7 @@ export async function getCoverageReport(apiData) {
         const coveredApis = findCoveredApis(apiItem, swaggerUrls);
 
         const coveredMethods = apiItem.methods.map((method) => {
-            const {name, responses, parameters} = method;
+            const { name, responses, parameters } = method;
             const coveredMethodNames: any = coveredApis.filter((c) => c.method == name);
 
             const coveredStatusCodes = [...new Set(coveredMethodNames.map((m) => m.response))];
@@ -81,8 +117,8 @@ export async function getCoverageReport(apiData) {
 
             const missingParameters = parameters
                 .filter((p) => p.in !== 'header')
-                .map(({name, required, type, ...p}) => {
-                    return {name, required, in: p.in, type};
+                .map(({ name, required, type, ...p }) => {
+                    return { name, required, in: p.in, type };
                 })
                 .map((mp) => mp.name)
                 .filter((m) => !coveredParameters.includes(m));
@@ -140,10 +176,10 @@ export async function getCoverageReport(apiData) {
                 full: +((full.length / result.length) * 100).toFixed(),
             },
         },
-        all: {size: result.length, items: all},
-        missing: {size: missing.length, items: missed},
-        partial: {size: partial.length, items: partially},
-        full: {size: full.length, items: fully},
+        all: { size: result.length, items: all },
+        missing: { size: missing.length, items: missed },
+        partial: { size: partial.length, items: partially },
+        full: { size: full.length, items: fully },
     };
 }
 
@@ -164,7 +200,7 @@ const findCoveredApis = (apiItem: any, swaggerUrls: any) => {
             if (match) {
                 api.parameters.push(
                     ...Object.keys(match).map((k) => {
-                        return {name: k};
+                        return { name: k };
                     }),
                 );
             }
@@ -203,5 +239,5 @@ function mergeBody(bodies: any[]) {
         return destination;
     };
 
-    return merge.all(bodies, {arrayMerge: combineMerge});
+    return merge.all(bodies, { arrayMerge: combineMerge });
 }

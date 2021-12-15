@@ -1,3 +1,5 @@
 <div class="accordion" id="accordionExample">
-    <% Object.entries(apiList).forEach(function(item, index) { %> <%- include('accordion', {item: item, index: index});%> <%});%>
+    <% Object.entries(apiList).forEach(function(item, index) { %>
+        <%- include('accordion', {item: item, index: index});%>
+            <%});%>
 </div>
