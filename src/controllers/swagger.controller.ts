@@ -1,11 +1,11 @@
-import {NextFunction, Request, Response} from 'express';
-import {SWAGGER_SPEC_URL, setApiSericeUrl, setSwaggerUrl, setBasePath, PROXY_MODE, API_SERVICE_URL} from '../config/constants';
-import {getSwaggerPaths, getCoverageReport} from '../services/swagger.service';
-import {createProxyMiddleware} from 'http-proxy-middleware';
+import { NextFunction, Request, Response } from 'express';
+import { SWAGGER_SPEC_URL, setApiSericeUrl, setSwaggerUrl, setBasePath, PROXY_MODE, API_SERVICE_URL, API_SERVICE_URL_ARRAY, SWAGGER_SPEC_URL_ARRAY, SWAGGER_BASE_PATH_ARRAY, SWAGGER_BASE_PATH, setApiSericeUrlToArray, setSwaggerUrlToArray, setBasePathToArray, CURRENT_ID } from '../config/constants';
+import { getSwaggerPaths, getCoverageReport, getSwaggerPaths_new } from '../services/swagger.service';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import isUrl from 'is-url';
 import urlParse from 'url-parse';
 import querystring from 'querystring';
-import {logger} from '../utils/logger';
+import { logger } from '../utils/logger';
 
 let swaggerApiList = {};
 export const spec = [];
@@ -46,7 +46,7 @@ class SwaggerController {
         const path = this.getPath(req).replace('/reqover/swagger', '');
         const params = req.query;
         const queryParameters = Object.entries(params).map(([p, v]) => {
-            return {name: p, value: v};
+            return { name: p, value: v };
         });
 
         const body = req.body;
@@ -93,7 +93,7 @@ class SwaggerController {
 
     public downloadReport = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         const reportData = await getCoverageReport(swaggerApiList);
-        res.render('swagger_report', {data: reportData});
+        res.render('swagger_report', { data: reportData });
     };
 
     public specs = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -106,7 +106,7 @@ class SwaggerController {
 
     public reset = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         spec.length = 0;
-        res.send({status: 'done'});
+        res.send({ status: 'done' });
     };
 
     public info = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -118,7 +118,7 @@ class SwaggerController {
     };
 
     public saveConfig = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        const {type, data} = req.body;
+        const { type, data } = req.body;
 
         if (type === 'swagger') {
             setApiSericeUrl(data.serviceUrl);
@@ -128,14 +128,29 @@ class SwaggerController {
 
         try {
             swaggerApiList = await getSwaggerPaths(data.specUrl);
-            res.send({done: 'ok'});
+            res.send({ done: 'ok' });
         } catch (error) {
-            res.status(404).send({error: error.message});
+            res.status(404).send({ error: error.message });
+        }
+    };
+
+    public saveConfig_new = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+        const { type, data } = req.body;
+        if (type === 'swagger') {
+            setApiSericeUrlToArray(data.serviceUrl, CURRENT_ID);
+            setSwaggerUrlToArray(data.specUrl, CURRENT_ID);
+            setBasePathToArray(data.basePath, CURRENT_ID);
+        }
+        try {
+            swaggerApiList = await getSwaggerPaths_new(data.specUrl);
+            res.send({ done: 'ok' });
+        } catch (error) {
+            res.status(404).send({ error: error.message });
         }
     };
 
     public config = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-        res.render('main', {apiUrl: API_SERVICE_URL, specUrl: SWAGGER_SPEC_URL, graphqlUrl: ''});
+        res.render('main', { apiUrl: API_SERVICE_URL, specUrl: SWAGGER_SPEC_URL, graphqlUrl: '' });
     };
 
     public swaggerReport = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -145,7 +160,7 @@ class SwaggerController {
 
         try {
             const reportData = await getCoverageReport(swaggerApiList);
-            res.render('swagger', {data: reportData});
+            res.render('swagger', { data: reportData });
         } catch (error) {
             res.redirect('/');
         }
